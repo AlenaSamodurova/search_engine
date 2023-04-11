@@ -31,8 +31,8 @@ jsoup-setting:
 
 
 
-logging:
-  level:
+#logging:
+#  level:
  #   root: DEBUG
 #    org.hibernate.SQL: DEBUG
 #    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
