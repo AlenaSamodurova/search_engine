@@ -8,6 +8,7 @@ import searchengine.dto.statistics.IndexingErrorResult;
 import searchengine.dto.statistics.IndexingResult;
 import searchengine.model.SiteEntity;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -34,6 +35,7 @@ public class IndexingServiceImpl implements IndexingService {
         if (!isWorking.compareAndSet(false, true)) {
             return indexingErrorResult("Индексация уже запущена");
         }
+        isWorking.set(true);
 
         clearData();
         List<SiteEntity> sites = sitesList.getSites().stream()
@@ -48,8 +50,8 @@ public class IndexingServiceImpl implements IndexingService {
                         .map(CompletableFuture::runAsync).toList()
         );
 
-        completableFutures.forEach(CompletableFuture::join);
-        isWorking.set(false);
+        CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]))
+                .thenRun(() -> isWorking.set(false));
 
         return new IndexingResult();
     }
@@ -59,7 +61,15 @@ public class IndexingServiceImpl implements IndexingService {
         if (!isWorking.get()) {
             return indexingErrorResult("Индексация не запущена");
         }
-        pools.forEach(ForkJoinPool::shutdownNow);
+        pools.forEach(fjp->
+        {
+          fjp.shutdownNow();
+            try {
+                fjp.awaitTermination(1, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
         for (CompletableFuture completableFuture : completableFutures) {
             completableFuture.cancel(true);
         }
@@ -112,6 +122,11 @@ public class IndexingServiceImpl implements IndexingService {
             locker.unlock();
             isWorking.set(false);
         }
+    }
+
+    @Override
+    public boolean isIndexing() {
+        return isWorking.get();
     }
 
     private static IndexingErrorResult indexingErrorResult(String message) {

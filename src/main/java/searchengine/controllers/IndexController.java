@@ -20,7 +20,7 @@ public class IndexController {
         return indexingService.startIndexing();
     }
 
-    @GetMapping("/stopIndexingAll")
+    @GetMapping("/stopIndexing")
     public IndexingResult stopIndexing() throws InterruptedException {
         return indexingService.stopIndexing();
     }

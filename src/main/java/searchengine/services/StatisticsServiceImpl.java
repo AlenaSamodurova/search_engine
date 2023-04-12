@@ -25,9 +25,10 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService {
 
-    private final Random random = new Random();
     private final SitesList sites;
 
+    @Autowired
+    IndexingService indexingService;
     @Autowired
     SiteRepository siteRepository;
     @Autowired
@@ -40,7 +41,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         TotalStatistics total = new TotalStatistics();
         total.setSites(sites.getSites().size());
-        total.setIndexing(true);
+        total.setIndexing(indexingService.isIndexing());
 
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
         List<Site> sitesList = sites.getSites();
